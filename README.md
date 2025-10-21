@@ -5,7 +5,7 @@
 # Relatório Completo e Visualização Interativa:
 Este trabalho visa analisar os dados do ENADE 2017 para responder a avaliação final do curso de Estatística para Ciência de dados do MBA em IA, Data Science e Big Data para Negócios do IBMEC. O relatório final (HTML) contém todos os códigos em R, gráficos e análises estatísticas exigidas.
 
-**ACESSE O DASHBOARD INTERATIVO AQUI:**
+**ACESSE O RELATÓRIO INTERATIVO AQUI:**
 [Projeto Final - Relatório ENADE (HTML)] (https://heitorfb10.github.io/enade_projeto_final_estatistica_mba_ibmec/projeto_final_estatistica_ibmec_v4.html)
 
 ## Objetivo e Contexto da Análise
