@@ -1,18 +1,26 @@
-# enade_projeto_final_estatistica_mba_ibmec
+# Projeto Final do Curso de Estatística do MBA em IA, Data Science e Big Data para Negócios do IBMEC: Análise de dados do ENADE 2017
 
+![Status: Concluído - Nota 10/10] 
 
-# Análise de dados do ENADE 2017 - Avaliação final - curso de Estatística para Ciência de dados - MBA em IA, Data Science e Big Data para Negócios -  IBMEC
+# Relatório Completo e Visualização Interativa:
+Este trabalho visa analisar os dados do ENADE 2017 para responder a avaliação final do curso de Estatística para Ciência de dados do MBA em IA, Data Science e Big Data para Negócios do IBMEC. O relatório final (HTML) contém todos os códigos em R, gráficos e análises estatísticas exigidas.
 
-## Objetivo do projeto
-Este trabalho visa analisar os dados do ENADE 2017 para responder a avaliação final do curso de Estatística para Ciência de dados do MBA em IA, Data Science e Big Data para Negócios do IBMEC.
+**ACESSE O DASHBOARD INTERATIVO AQUI:**
+[Projeto Final - Relatório ENADE (HTML)] (https://heitorfb10.github.io/enade_projeto_final_estatistica_mba_ibmec/projeto_final_estatistica_ibmec_v4.html)
+
+## Objetivo e Contexto da Análise
+O objetivo central deste trabalho é aplicar técnicas de **Estatística Descritiva e Inferencial** para analisar os microdados do ENADE 2017, com foco no curso de **Engenharia de Controle e Automação**.
+A análise busca **evidenciar disparidades de desempenho** e responder à seguinte hipótese:
+**Há razão para desconfiar que variáveis socioeconômicas (Raça/Cor) e geográficas (Região) causam diferenças estatisticamente significativas nas notas dos alunos.**
 
 ## Metodologia e Ferramentas
-* **Linguagem:** R
-* **Ambiente:** RStudio
-* **Pacotes:** `tidyverse` (dplyr, ggplot2), `data.table`, `kableExtra`, `DescTools`, dentre outros...
-* **Técnicas de Análise:**
-    * Transformação de Variáveis Categóricas (`case_when`).
-    * Estatísticas Descritivas (Média, Mediana, Assimetria, Curtose).
-    * Análise de Qualidade de Dados (`na.omit`).
-    * Visualização Bivariada com **Box-Plots Fasetados** (Raça vs. Região).
-    *  **Análise de Frequência e Proporção:** uso de **Gráficos de Barras Empilhadas** para visualizar a distribuição de variáveis qualitativas (satisfação, tipo de instituição).
+| Ferramenta / Técnica | Finalidade |
+| :--- | :--- |
+| **Linguagem / Ambiente** | R (RStudio) |
+| **Transformação de Variáveis** | `case_when()` para rotular 17 colunas (Ex: códigos `1` para `Norte`). |
+| **Limpeza de Dados** | `na.omit()` para garantir a qualidade estatística da amostra. |
+| **Estatística Descritiva** | `summarise()` com `Mode`, `skewness`, `kurtosis` (forma da distribuição). |
+| **Visualização Principal** | **Box-Plots Fasetados** (`facet_wrap`) para cruzar Nota por Raça DENTRO de cada Região. |
+| **Análise de Frequência** | **Gráficos de Barras Empilhadas** (`geom_bar(position="fill")`) para visualizar proporção de satisfação. |
+| **Relatório de Entrega** | **RMarkdown** (output `rmdformats::readthedown`). |
+---
