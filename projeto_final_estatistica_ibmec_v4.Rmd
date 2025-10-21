@@ -1,0 +1,549 @@
+---
+title: "Análise de dados do ENADE 2017 - Avaliação final - curso de Estatística para Ciência de dados - MBA em IA, Data Science e Big Data para Negócios -  IBMEC"
+author: "Heitor Fernandes Barbosa - Flavia Cunha de Carvalho - Leonardo dos Santos Neri - Rodrigo Santos da Silva"
+date: "15/10/2025"
+output: rmdformats::readthedown
+---
+# Apresentação
+Este trabalho visa analisar os dados do ENADE 2017 para responder a avaliação final do curso de Estatística para Ciência de dados do MBA em IA, Data Science e Big Data para Negócios do IBMEC.
+
+Professor: Thiago Marques
+
+# Atividades da avaliação final
+**OBS:** Apresentar um relatório gerado no Rmarkdown com todas as Análises
+
+A\) Faça a importação para o R do arquivo do ENADE 2017 Utilizado em nosso curso (MICRODADOS ENADE 2017.txt)  (Valor: 1 Pontos)
+
+
+B\) Faça um filtro escolhendo as seguintes variáveis e as classifique quanto ao tipo de variável (EX: Qualitativa nominal, Quantitativa contínua...): NT_OBJ_FG, CO_GRUPO, CO_REGIAO_CURSO, QE_I02, CO_TURNO_GRADUACAO (Valor 1 Pontos)
+
+
+C\) Escolha um curso do Enade (Não pode ser análise e desenvolvimento de sistemas (ADS) ) e filtre só esse curso para a nossa análise: (Valor 1 Pontos) 
+Variável área de enquadramento do curso no Enade: co_grupo
+
+
+D\) Transforme as variáveis colocando os seus devidos rótulos, para que facilite a análise descritiva: (Valor 1 Pontos)
+Exemplo: Estado civil "A", vai virar "Solteiro"	
+
+
+E\) Faça as estatísticas descritivas do seu banco (Resumo geral), avaliando se há variáveis faltantes ou não, e se existirem, elimine-as. (Valor 1 Pontos) 
+
+
+F\) Escolha uma das variáveis ou ambas: Turnos (CO_TURNO_GRADUACAO) ou RAÇA ( QE_I02) e estude o comportamento das notas dos alunos, faça o cruzamento de variáveis, elabore gráficos adequados para cada tipo de variável, se há razão para desconfiar que há uma diferença significativa entre as categorias, de forma geral e entre regiões. (Valor 5,0 Pontos) 
+
+Exemplo: Há razão para desconfiar que pessoas brancas têm melhores notas que amarelos? 
+
+Exemplo: Há razão para desconfiar que pessoas que estudam no turno da manhã têm notas maiores que os que estudam à noite?  	
+
+Exemplo: Há razão para desconfiar que pessoas pretas da região sul têm notas maiores que pessoas pretas da região norte?
+
+G\) Elaborar um Dashboard usando Flexdashboard para que alguém responsável por elaborar políticas públicas, fosse capaz de evidenciar insights na elaboração das mesmas (ponto extra) (Pode ser publicado ou só com os códigos no flexdashboard)
+
+# Configuração Inicial
+```{r setup, include=TRUE}
+# geralmente o chunk de setup é feito c "include=FALSE" p ficar oculto 
+
+knitr::opts_chunk$set(
+  echo = TRUE,          # mostra o código
+  message = FALSE,      # oculta mensagens
+  warning = FALSE,      # oculta avisos
+  fig.align = 'center', # centraliza gráficos
+  fig.width = 8,
+  fig.height = 5
+)
+```
+
+# Carregamento de Pacotes
+```{r carregamento_pacotes}
+vetor_pacotes <- c(
+  "tidyverse",
+  "data.table",
+  "readxl",
+  "knitr",
+  "kableExtra",
+  "Hmisc",
+  "DescTools",
+  "e1071",
+  "dplyr",
+  "ggplot2",
+  "plotly",
+  "scales"
+)
+# install.packages(vetor_pacotes)
+invisible(lapply(vetor_pacotes, require, character.only = TRUE))
+
+```
+
+# ITEM A: Importação do Banco de Dados
+```{r importacao_dados}
+df_enade <- read_csv2("MICRODADOS_ENADE_2017.txt")
+```
+
+# ITEM B: Seleção e classificação da variáveis
+## Seleção das Variáveis 
+```{r selecao_variaveis}
+microdados_filtrados = df_enade %>% dplyr::select(
+    NT_GER, # o exercício pedia NT_OBJ_FG
+    CO_GRUPO, 
+    CO_REGIAO_CURSO, 
+    QE_I02, 
+    CO_TURNO_GRADUACAO,
+    CO_CATEGAD, 
+    CO_MODALIDADE, 
+    CO_UF_CURSO, 
+    NU_IDADE, 
+    TP_SEXO, 
+    QE_I01, 
+    QE_I08, 
+    QE_I09, 
+    QE_I10,
+    QE_I15, 
+    QE_I17, 
+    QE_I18, 
+    QE_I21, 
+    QE_I23, 
+    QE_I25, 
+    QE_I27, 
+    QE_I28
+)
+
+rm(df_enade)
+```
+
+## Criação da tabela de classificação
+```{r criacao_tabela_classificacao}
+tabela_classificacao <- data.frame(
+  Variavel = c(
+    "nota_geral",
+    "CO_GRUPO", 
+    "CO_REGIAO_CURSO", 
+    "QE_I02", 
+    "CO_TURNO_GRADUACAO"
+  ),
+  Descricao_ENADE = c(
+    "Nota Objetiva Formação Geral", 
+    "Código da Área do Curso", 
+    "Código da Região", 
+    "Cor/Raça do Aluno", 
+    "Turno da Graduação"
+  ),
+  Classificacao_Estatistica = c(
+    "Quantitativa Contínua", 
+    "Qualitativa Nominal", 
+    "Qualitativa Nominal", 
+    "Qualitativa Nominal", 
+    "Qualitativa Nominal"
+  ),
+  stringsAsFactors = FALSE
+)
+tabela_classificacao %>% 
+    kbl() %>% 
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                  full_width = FALSE)
+
+```
+
+# ITEM C: Seleção do curso de Engenharia de controle e automação
+```{r selecao_automacao}
+df_automacao = microdados_filtrados %>% filter(CO_GRUPO==5814)
+```
+
+# ITEM D: Transformação das variáveis (renomeação das colunas)
+```{r transformacao_variaveis}
+df_automacao = df_automacao %>% rename(idade = NU_IDADE)
+
+df_automacao = df_automacao %>% rename(nota_geral = NT_GER)
+
+df_automacao = df_automacao %>% mutate(Região = case_when(CO_REGIAO_CURSO == 1 ~ "Norte", CO_REGIAO_CURSO == 2 ~ "Nordeste", CO_REGIAO_CURSO == 3 ~ "Sudeste", CO_REGIAO_CURSO == 4 ~ "Sul", CO_REGIAO_CURSO == 5 ~ "Centro-Oeste"))
+
+df_automacao = df_automacao %>% mutate(Turno = case_when(CO_TURNO_GRADUACAO == 1 ~ "Matutino", CO_TURNO_GRADUACAO == 2 ~ "Vespertino", CO_TURNO_GRADUACAO == 3 ~ "Integral", CO_TURNO_GRADUACAO == 4 ~ "Noturno"))
+
+df_automacao = df_automacao %>% mutate(cor_ou_raca = case_when(QE_I02 == "A" ~ "Branca", QE_I02 == "B" ~ "Preta", QE_I02 == "C" ~ "Amarela", QE_I02 == "D" ~ "Parda", QE_I02 == "E" ~ "Indígena", QE_I02 == "F" ~ "Não quero declarar"))
+
+df_automacao = df_automacao %>% mutate(tipo_instituição = case_when(CO_CATEGAD == 1 ~ "Pública Federal", CO_CATEGAD == 2 ~ "Pública Estadual", CO_CATEGAD == 3 ~ "Pública Municipal", CO_CATEGAD == 4 ~ "Privada com fins lucrativos", CO_CATEGAD == 5 ~ "Privada sem fins lucrativos", CO_CATEGAD == 6 ~ "Especial"))
+
+df_automacao = df_automacao %>% mutate(modalidade = case_when(CO_MODALIDADE == "0" ~ "EaD", CO_MODALIDADE == "1" ~ "Presencial"))
+
+df_automacao = df_automacao %>% mutate(sexo = case_when(TP_SEXO == "M" ~ "Masculino", TP_SEXO == "F" ~ "Feminino"))
+
+df_automacao = df_automacao %>% mutate(estado_civil = case_when(QE_I01 == "A" ~ "Solteiro(a)", QE_I01 == "B" ~ "Casado(a)", QE_I01 == "C" ~ "Separado(a) judicialmente/divorciado(a)", QE_I01 == "D" ~ "Viúvo(a)", QE_I01 == "E" ~ "Outro"))
+
+df_automacao = df_automacao %>% mutate(renda_familiar_total = case_when(QE_I08 == "A" ~ "Até 1,5 salário mínimo (até R$ 1.405,50)", QE_I08 == "B" ~ "De 1,5 a 3 salários mínimos (R$ 1.405,51 a R$ 2.811,00)", QE_I08 == "C" ~ "De 3 a 4,5 salários mínimos (R$ 2.811,01 a R$ 4.216,50)", QE_I08 == "D" ~ "De 4,5 a 6 salários mínimos (R$ 4.216,51 a R$ 5.622,00)", QE_I08 == "E" ~ "De 6 a 10 salários mínimos (R$ 5. 622,01 a R$ 9.370,00)", QE_I08 == "F" ~ "De 10 a 30 salários mínimos (R$ 9.370,01 a R$ 28.110,00)", QE_I08 == "G" ~ "Acima de 30 salários mínimos (mais de R$ 28.110,00)"))
+
+df_automacao = df_automacao %>% mutate(renda_familiar_total = case_when(QE_I09 == "A" ~ "Não tenho renda e meus gastos são financiados por programas governamentais.", QE_I09 == "B" ~ "Não tenho renda e meus gastos são financiados pela minha família ou por outras pessoas.", QE_I09 == "C" ~ "Tenho renda, mas recebo ajuda da família ou de outras pessoas para financiar meus gastos.", QE_I09 == "D" ~ "Tenho renda e não preciso de ajuda para financiar meus gastos.", QE_I09 == "E" ~ "Tenho renda e contribuo com o sustento da família.", QE_I09 == "F" ~ "Sou o principal responsável pelo sustento da família."))
+
+df_automacao = df_automacao %>% mutate(ocupação = case_when(QE_I10 == "A" ~ "Não estou trabalhando", QE_I10 == "B" ~ "Trabalho eventualmente", QE_I10 == "C" ~ "Trabalho até 20 horas semanais", QE_I10 == "D" ~ "Trabalho de 21 a 39 horas semanais", QE_I10 == "E" ~ "Trabalho 40 horas semanais ou mais"))
+
+df_automacao = df_automacao %>% mutate(ingresso_por_cota = case_when(QE_I15 == "A" ~ "Não", QE_I15 == "B" ~ "Sim, por critério étnico-racial", QE_I15 == "C" ~ "Sim, por critério de renda", QE_I15 == "D" ~ "Sim, por ter estudado em escola pública ou particular com bolsa de estudos", QE_I15 == "E" ~ "Sim, por sistema que combina dois ou mais critérios anteriores", QE_I15 == "F" ~ "Sim, por sistema diferente dos anteriores"))
+
+df_automacao = df_automacao %>% mutate(tipo_de_escola = case_when(QE_I17 == "A" ~ "Todo em escola pública", QE_I17 == "B" ~ "Todo em escola privada (particular)", QE_I17 == "C" ~ "Todo no exterior", QE_I17 == "D" ~ "A maior parte em escola pública", QE_I17 == "E" ~ "A maior parte em escola privada (particular)", QE_I17 == "F" ~ "Parte no Brasil e parte no exterior"))
+
+df_automacao = df_automacao %>% mutate(familiar_formado = case_when(QE_I21 == "A" ~ "Sim", QE_I21 == "B" ~ "Não"))
+
+df_automacao = df_automacao %>% mutate(modalidade_do_ensino_médio = case_when(QE_I18 == "A" ~ "Ensino médio tradicional", QE_I18 == "B" ~ "Profissionalizante técnico (eletrônica, contabilidade, agrícola, outro)", QE_I18 == "C" ~ "Profissionalizante magistério (Curso Normal)", QE_I18 == "D" ~ "Educação de Jovens e Adultos (EJA) e/ou Supletivo", QE_I18 == "E" ~ "Outra modalidade"))
+
+df_automacao = df_automacao %>% mutate(horas_estudo = case_when(QE_I23 == "A" ~ "Nenhuma, apenas assisto às aulas", QE_I23 == "B" ~ "De uma a três", QE_I23 == "C" ~ "De quatro a sete", QE_I23 == "D" ~ "De oito a doze", QE_I23 == "E" ~ "Mais de doze"))
+
+df_automacao = df_automacao %>% mutate(motivo_escolha_curso = case_when(QE_I25 == "A" ~ "Inserção no mercado de trabalho", QE_I25 == "B" ~ "Influência familiar", QE_I25 == "C" ~ "Valorização profissional", QE_I25 == "D" ~ "Prestígio Social", QE_I25 == "E" ~ "Vocação", QE_I25 == "F" ~ "Oferecido na modalidade a distância", QE_I25 == "G" ~ "Baixa concorrência para ingresso", QE_I25 == "H" ~ "Outro motivo"))
+
+df_automacao = df_automacao %>% mutate(opiniao_conteudo_formacao_profissional = case_when(QE_I27 == 1 ~ "Discordo totalmente", QE_I27 == 2 ~ "Discordo em grande parte", QE_I27 == 3 ~ "Discordo parcialmente / Mais discordo que concordo", QE_I27 == 4 ~ "Concordo parcialmente / Mais concordo que discordo", QE_I27 == 5 ~ "Concordo em grande parte", QE_I27 == 6 ~ "Concordo totalmente", QE_I27 == 7 ~ "Não sei responder", QE_I27 == 8 ~ "Não se aplica"))
+
+df_automacao = df_automacao %>% mutate(opiniao_conteudo_atuacao_profissional = case_when(QE_I28 == 1 ~ "Discordo totalmente", QE_I28 == 2 ~ "Discordo em grande parte", QE_I28 == 3 ~ "Discordo parcialmente / Mais discordo que concordo", QE_I28 == 4 ~ "Concordo parcialmente / Mais concordo que discordo", QE_I28 == 5 ~ "Concordo em grande parte", QE_I28 == 6 ~ "Concordo totalmente", QE_I28 == 7 ~ "Não sei responder", QE_I28 == 8 ~ "Não se aplica"))
+
+df_automacao = df_automacao %>% mutate(uf_curso = case_when(CO_UF_CURSO == 11 ~ "Rondônia (RO)", CO_UF_CURSO == 12 ~ "Acre (AC)", CO_UF_CURSO == 13 ~ "Amazonas (AM)", CO_UF_CURSO == 14 ~ "Roraima (RR)", CO_UF_CURSO == 15 ~ "Pará (PA)", CO_UF_CURSO == 16 ~ "Amapá (AP)", CO_UF_CURSO == 17 ~ "Tocantins (TO)", CO_UF_CURSO == 21 ~ "Maranhão (MA)", CO_UF_CURSO == 22 ~ "Piauí (PI)", CO_UF_CURSO == 23 ~ "Ceará (CE)", CO_UF_CURSO == 24 ~ "Rio Grande do Norte (RN)", CO_UF_CURSO == 25 ~ "Paraíba (PB)", CO_UF_CURSO == 26 ~ "Pernambuco (PE)", CO_UF_CURSO == 27 ~ "Alagoas (AL)", CO_UF_CURSO == 28 ~ "Sergipe (SE)", CO_UF_CURSO == 29 ~ "Bahia (BA)", CO_UF_CURSO == 31 ~ "Minas Gerais (MG)", CO_UF_CURSO == 32 ~ "Espírito Santo (ES)", CO_UF_CURSO == 33 ~ "Rio de Janeiro (RJ)", CO_UF_CURSO == 35 ~ "São Paulo (SP)", CO_UF_CURSO == 41 ~ "Paraná (PR)", CO_UF_CURSO == 42 ~ "Santa Catarina (SC)", CO_UF_CURSO == 43 ~ "Rio Grande do Sul (RS)", CO_UF_CURSO == 50 ~ "Mato Grosso do Sul (MS)", CO_UF_CURSO == 51 ~ "Mato Grosso (MT)", CO_UF_CURSO == 52 ~ "Goiás (GO)", CO_UF_CURSO == 53 ~ "Distrito Federal (DF)"))
+
+```
+
+# ITEM E: Eliminação de NAs e estatística descritiva dos dados
+## Visualização da quantidade de NAs (pré-exclusão de NAs)
+```{r resumo_nas_antes}
+resumo_nas_antes = df_automacao %>% summarise_all(~sum(is.na(.)))
+resumo_nas_antes %>% 
+  kbl() %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+## Exclusão e visualização da quantidade de NAs (pós-exclusão de NAs)
+```{r resumo_nas_depois}
+df_automacao_sem_na = df_automacao %>% na.omit()
+resumo_nas_depois = df_automacao_sem_na %>% summarise_all(~sum(is.na(.)))
+resumo_nas_depois %>% 
+  kbl() %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+## Estatística descritiva dos dados
+### Nota geral:
+```{r estatistica_descritiva}
+df_automacao_sem_na %>%
+ summarise(
+ quantidade = n(),
+ media = mean(nota_geral),
+ mediana = median(nota_geral),
+ moda = Mode(nota_geral),
+ cv = sd(nota_geral) / media * 100, # Coeficiente de Variação
+ assimetria = skewness(nota_geral),
+ curtose = kurtosis(nota_geral)) %>%
+ kbl() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+summary(df_automacao_sem_na$nota_geral)
+
+```
+
+### Histograma com Curva de Densidade da nota geral:
+```{r grafico_histograma_densidade}
+g_histograma <- ggplot(df_automacao_sem_na, aes(x = nota_geral)) +
+  # 1. Histograma (Barra)
+  geom_histogram(
+    aes(y = after_stat(count) / sum(after_stat(count))), 
+    color = "black", 
+    fill = "lightblue", 
+    bins = 50
+  ) +
+  # 2. Curva de Densidade (Linha)
+  geom_density(
+    aes(y = after_stat(count) / sum(after_stat(count))), 
+    col = "red", 
+    size = 1
+  ) +
+  scale_y_continuous(labels = scales::percent) + # Formata o eixo Y como %
+  
+  ggtitle("Histograma e Curva de Densidade da Nota Geral") +
+  xlab("Nota Geral (NT_GER)") +
+  ylab("Frequência Relativa")
+
+# Imprime o gráfico
+g_histograma
+
+```
+
+### Conclusão da Estatística Descritiva
+
+A análise da Nota Geral (`NT_GER`) do curso de Engenharia de Controle e Automação revela as seguintes características na distribuição de desempenho:
+
+**Métricas de Tendência e Dispersão:**
+
+* O estudo abrangeu **4.770 alunos** (quantidade) e apresentou uma **média de 42,16 pontos**, com uma **mediana de 41,53** e uma **moda de 34,30**, em uma escala de 0 a 100.
+* O **Coeficiente de Variação (CV)** de **31,15%** (acima de 30%) confirma a **alta dispersão** e **heterogeneidade de desempenho** entre os estudantes.
+
+**Forma da Distribuição (Assimetria e Curtose):**
+
+* A **assimetria positiva (0,25)** e a **curtose ligeiramente negativa (-0,05)** apontam para uma distribuição que é **aproximadamente normal, porém, ainda assim, platicúrtica.**
+* A assimetria positiva, corroborada pela média ser ligeiramente maior que a mediana, indica que há uma **leve concentração de notas abaixo da média** e uma cauda alongada à direita, sugerindo poucos alunos com notas muito elevadas.
+
+
+# ITEM F: Análises Gráficas
+## Frequência absoluta do nº de alunos agrupada por cor ou raça
+```{r graf_col_vert_raca}
+graf_col_vert_raca <- ggplot(df_automacao_sem_na, aes(x = cor_ou_raca, fill = cor_ou_raca)) +
+    # 1. Cria as barras (a contagem é feita automaticamente)
+    geom_bar() +
+    
+    # 2. Adiciona os rótulos de contagem no topo de cada barra
+    geom_text(
+        stat = 'count', 
+        aes(label = after_stat(count)), 
+        vjust = -0.5, 
+        size = 3.5 
+    ) +
+    
+    ggtitle("Número de alunos por cor ou raça") +
+    xlab("Cor ou Raça") +
+    ylab("Frequência") +
+    
+    # Ajusta o ângulo do texto no eixo X para evitar sobreposição
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Exibe o gráfico de barras
+graf_col_vert_raca
+
+```
+
+## Frequência relativa do nº de alunos agrupada por cor ou raça
+```{r graf_pizza_raca}
+# 1. CRIAÇÃO DO DATAFRAME df_pizza_raca (Correção do Erro)
+df_pizza_raca <- df_automacao_sem_na %>%
+    count(cor_ou_raca) %>% # Conta a frequência de cada categoria
+    rename(Freq = n) %>%
+    # Calcula a porcentagem para o rótulo do gráfico
+    mutate(
+        Var1 = cor_ou_raca,
+        Percent = Freq / sum(Freq),
+        Rotulo = paste0(Var1, " (", scales::percent(Percent), ")")
+    )
+
+# 2. CRIAÇÃO DO GRÁFICO DE PIZZA (plot_ly)
+graf_pizza_raca = plot_ly(df_pizza_raca,
+                          labels = ~Var1,
+                          values = ~Freq,
+                          type = 'pie',
+                          # Configura o texto para mostrar a porcentagem
+                          textinfo = 'percent', 
+                          hoverinfo = 'text',
+                          text = ~paste0(Var1, ': ', Freq, ' alunos (', scales::percent(Percent), ')')) %>%
+    layout(title = 'Frequência relativa por Raça/Cor (%)')
+
+# Exibe o gráfico de pizza
+graf_pizza_raca
+
+```
+
+**Conclusão:** Há uma predominância de alunos brancos (61,1%) no curso de Engenharia de Controle e Automação, seguidos por alunos pardos (25,9%). Juntos, esses dois grupos representam quase 87% do total da amostra analisada. A presença de alunos pretos (6,1%), amarelos (3%) e indígenas (0,2%) é consideravelmente menor, revelando **baixa diversidade racial entre os participantes**.
+
+
+## Boxplot da nota geral por raça
+```{r boxplot_nota_geral_por_raca}
+boxplot_nota_geral_por_raca = ggplot(df_automacao_sem_na, aes(x = cor_ou_raca, y = nota_geral, fill = cor_ou_raca)) +
+ geom_boxplot() +
+ ggtitle("Box-Plot da Nota Geral por Cor/Raça") +
+ xlab("Cor ou Raça") +
+ ylab("Nota Geral do ENADE") +
+ # Ajusta o ângulo do texto no eixo X para melhor leitura
+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ # Torna o gráfico interativo
+ggplotly(boxplot_nota_geral_por_raca)
+```
+**Conclusão:** de forma geral, os alunos brancos e os que não quiseram declarar a raça apresentam as melhores notas, seguidos por pardos, amarelos e pretos. Indígenas apresentam notas consideravelmente inferiores as demais raças.
+
+## Boxplot da nota geral por região
+```{r boxplot_nota_geral_por_região}
+boxplot_nota_geral_por_região = ggplot(df_automacao_sem_na,
+ # Eixo X é a Região; Eixo Y é a Nota
+ aes(x = Região, y = nota_geral, fill = Região)) +
+ geom_boxplot() +
+ ggtitle("Box-Plot da Nota Geral por Região") +
+ xlab("Região do Curso") +
+ ylab("Nota Geral do ENADE (nota_geral)") +
+
+ # Ajusta o texto do eixo X para que não se sobreponha
+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ # Torna o gráfico interativo
+ggplotly(boxplot_nota_geral_por_região)
+```
+**Conclusão:** Alunos do sul e sudeste apresentam as melhores notas, com os do sudeste apresentando maior dispersão. Seguidos pelos alunos do nordeste e centro-oeste. Alunos da região norte apresentam o pior desempenho. 
+
+## Boxplot da nota por região, dividido por raça
+```{r boxplot_nota_geral_por_região_dividido_raca}
+boxplot_nota_geral_por_região_dividido_raca = ggplot(df_automacao_sem_na,
+ # Eixo X é a Região; Eixo Y é a Nota
+ aes(x = Região, y = nota_geral, fill = Região)) +
+ geom_boxplot() +
+ ggtitle("Nota geral por região, separada por raça") +
+ xlab("Região do Curso") +
+ ylab("Nota Geral (nota_geral)") +
+ # Facetamento principal: cria um painel (gráfico) para cada Cor/Raça
+ facet_wrap(~ cor_ou_raca, ncol = 3) +
+ # Ajusta o texto do eixo X (Região) para que não se sobreponha
+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ # Torna o gráfico interativo
+ggplotly(boxplot_nota_geral_por_região_dividido_raca)
+```
+**Conclusão:**
+
+* independente da raça, alunos da região sudeste apresentam um dos melhores desempenhos.
+* analisando as notas máximas de cada região, alunos da região norte sempre apresentam as piores notas máximas dentre todos os grupos raciais (com exceção dos alunos que não declararam raça da região norte).
+* alunos da região sul apresentam um dos melhores desempenhos dentre os brancos, pardos e dos que não declararam a raça.
+* alunos da região nordeste apresentam um dos melhores desempenhos dentre os amarelos, indígenas e pretos.
+
+## Boxplot da nota geral por raça, dividido por região
+```{r boxplot_nota_geral_por_raca_dividido_região}
+boxplot_nota_geral_por_raca_dividido_região = ggplot(df_automacao_sem_na,
+ # Eixo X é a Raça; Eixo Y é a Nota
+ aes(x = cor_ou_raca, y = nota_geral, fill = cor_ou_raca)) +
+ geom_boxplot() +
+ ggtitle("Nota Geral por Raça, separada por região") +
+ xlab("Cor ou Raça") +
+ ylab("Nota Geral (nota_geral)") +
+
+ # Facetamento principal: cria um painel (gráfico) para cada Região
+ facet_wrap(~ Região) +
+
+ # Ajusta o texto do eixo X para que não se sobreponha
+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ # Torna o gráfico interativo
+ggplotly(boxplot_nota_geral_por_raca_dividido_região)
+
+```
+**Conclusão:**
+
+* independente da região, alunos brancos e pardos apresentam um dos melhores desempenhos.
+* analisando as notas máximas de cada raça, alunos indígenas apresentam as piores notas máximas em todas as regiões.
+* amarelos apresentam uma das melhores notas no nordeste.
+* alunos que não declararam a raça apresentaram as melhores notas no norte.
+* dentre as notas máximas de cada raça, alunos negros possuem as piores notas máximas em todas as regiões (com exceção das notas máximas dos alunos pretos da região norte). 
+
+# ITEM G: Sugestão de Políticas Públicas para Melhoria do Ensino
+## Aplicar Fator Ordenado para a Visualização
+```{r fator_ordenado_opiniao}
+# Define a ordem lógica dos níveis de opinião (do 1 ao 8)
+ordem_opiniao <- c(
+  "Discordo totalmente", 
+  "Discordo em grande parte", 
+  "Discordo parcialmente / Mais discordo que concordo", 
+  "Concordo parcialmente / Mais concordo que discordo", 
+  "Concordo em grande parte", 
+  "Concordo totalmente",
+  "Não sei responder",
+  "Não se aplica"
+)
+
+# Transforma a coluna QE_I27 (Formação) em um FATOR ORDENADO
+df_automacao_sem_na <- df_automacao_sem_na %>%
+  mutate(
+    opiniao_conteudo_formacao_profissional = factor(
+      opiniao_conteudo_formacao_profissional,
+      levels = ordem_opiniao,
+      ordered = TRUE
+    )
+  )
+
+# Transforma a coluna QE_I28 (Atuação) em um FATOR ORDENADO
+df_automacao_sem_na <- df_automacao_sem_na %>%
+  mutate(
+    opiniao_conteudo_atuacao_profissional = factor(
+      opiniao_conteudo_atuacao_profissional,
+      levels = ordem_opiniao,
+      ordered = TRUE
+    )
+  )
+```
+
+## Gráfico de Satisfação com Formação por Tipo de Instituição
+```{r grafico_satisfacao_formacao_instituicao, fig.height=6}
+
+# 1. PREPARAÇÃO DOS DADOS: Agrupa e calcula a proporção dentro de cada tipo_instituição
+satisf_formacao_inst <- df_automacao_sem_na %>%
+    filter(!is.na(opiniao_conteudo_formacao_profissional)) %>%
+    group_by(tipo_instituição, opiniao_conteudo_formacao_profissional) %>%
+    summarise(n = n(), .groups = 'drop') %>%
+    # Calcula a proporção DENTRO de cada tipo_instituição
+    group_by(tipo_instituição) %>%
+    mutate(prop = n / sum(n),
+           label = scales::percent(prop, accuracy = 0.1)) %>%
+    ungroup()
+
+# 2. CRIAÇÃO DO GRÁFICO (Barras Empilhadas)
+grafico_satisfacao_formacao_inst <- ggplot(satisf_formacao_inst,
+    aes(x = tipo_instituição, y = prop, fill = opiniao_conteudo_formacao_profissional)) +
+    
+    # Cria as barras empilhadas em 100%
+    geom_col(position = "stack") + 
+    
+    # Adiciona os rótulos de porcentagem (Com FILTRO DE SOBREPOSIÇÃO)
+    geom_text(
+        aes(label = ifelse(prop > 0.04, label, "")), # Mostra rótulo APENAS se a proporção for maior que 4%
+        position = position_stack(vjust = 0.5), # Centraliza o rótulo no segmento
+        size = 3.5,
+        color = "black" # Rótulo preto para alto contraste
+    ) +
+    
+    # --- ESTILIZAÇÃO ---
+    scale_y_continuous(labels = scales::percent) +
+    scale_fill_brewer(palette = "Dark2") + # Paleta Dark2 (Contraste alto)
+    
+    labs(title = "Satisfação com Formação",
+         x = "Tipo de Instituição Acadêmica",
+         y = "Proporção de Alunos (%)",
+         fill = "As disciplinas cursadas contribuíram
+para sua formação integral, 
+como cidadão e profissional.") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          plot.title = element_text(hjust = 0.5, face = "bold"))
+
+ggplotly(grafico_satisfacao_formacao_inst, tooltip = "text")
+```
+
+## Gráfico de Satisfação com a Adequação do Conteúdo Programático em Relação à Atividade Profissional por Tipo de Instituição
+```{r grafico_satisfacao_atuacao_instituicao, fig.height=6}
+# 1. PREPARAÇÃO DOS DADOS: Agrupa por Instituição e Opinião
+satisf_atuacao_inst <- df_automacao_sem_na %>%
+    filter(!is.na(opiniao_conteudo_atuacao_profissional)) %>%
+    group_by(tipo_instituição, opiniao_conteudo_atuacao_profissional) %>%
+    summarise(n = n(), .groups = 'drop') %>%
+    # Calcula a proporção DENTRO de cada tipo_instituição
+    group_by(tipo_instituição) %>%
+    mutate(prop = n / sum(n),
+           label = scales::percent(prop, accuracy = 0.1)) %>%
+    ungroup()
+
+# 2. CRIAÇÃO DO GRÁFICO (Barras Empilhadas)
+grafico_satisfacao_atuacao_inst <- ggplot(satisf_atuacao_inst,
+    aes(x = tipo_instituição, y = prop, fill = opiniao_conteudo_atuacao_profissional)) +
+    
+    geom_col(position = "stack") + 
+    
+    # Adiciona os rótulos de porcentagem (Com FILTRO DE SOBREPOSIÇÃO)
+    geom_text(
+        aes(label = ifelse(prop > 0.04, label, "")), # Mostra rótulo APENAS se a proporção for maior que 4%
+        position = position_stack(vjust = 0.5), # Centraliza o rótulo
+        size = 3.5,
+        color = "black"
+    ) +
+    
+    # --- ESTILIZAÇÃO ---
+    scale_y_continuous(labels = scales::percent) +
+    scale_fill_brewer(palette = "Dark2") + # Paleta Dark2 (Contraste alto)
+    
+    labs(title = "Adequação do Conteúdo Programático",
+         x = "Tipo de Instituição Acadêmica",
+         y = "Proporção de Alunos (%)",
+         fill = "Os conteúdos abordados 
+nas disciplinas do curso favoreceram 
+sua atuação em estágios ou 
+em atividades de iniciação profissional.") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          plot.title = element_text(hjust = 0.5, face = "bold"))
+
+ggplotly(grafico_satisfacao_atuacao_inst, tooltip = "text")
+```
+
+
+**Conclusão:** os dois gráficos acima referem-se à **satisfação dos alunos perante à relação entre o conteúdo programático de seus cursos e sua formação profissional.** Os dois gráficos mostram uma **maior insatisfação de alunos que estudam em instituições públicas,** sejam elas, federais, estaduais ou municipais. Assim, **políticas públicas que estimulassem e facilitassem a revisão do currículo estudantil,** principalmente, das instituições públicas para que **melhor atendessem as demandas e inovações do mercado de trabalho** em suas diferentes áreas de estudo e espaços geográficos deveriam ser adotadas.
