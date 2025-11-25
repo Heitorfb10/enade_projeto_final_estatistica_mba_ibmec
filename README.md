@@ -1,27 +1,57 @@
-# Final Project of the Statistics Course – MBA in AI, Data Science and Big Data for Business (IBMEC): ENADE 2017 Data Analysis
+# Final Project – Statistics for Data Science (MBA IBMEC)
+**ENADE 2017 – Data Analysis Report (R)**
 
-![Status: Completed – Score 10/10] 
+This repository contains the final project developed for the course “Statistics for Data Science”, part of the MBA in AI, Data Science and Big Data for Business (IBMEC).
+The deliverable is a comprehensive HTML analytical report with all R scripts, visualizations, and statistical procedures applied to the ENADE 2017 microdata.
 
-# Complete Report and Interactive Visualization:
-This project aims to analyze the ENADE 2017 dataset as part of the final evaluation for the Statistics for Data Science course in the MBA in AI, Data Science and Big Data for Business at IBMEC.
-The final report (HTML) contains all R code, charts, and statistical analyses required for the assignment.
+## Project Overview
 
-**ACCESS THE INTERACTIVE REPORT HERE:**
-[Projeto Final - Relatório ENADE (HTML)] (https://heitorfb10.github.io/enade_projeto_final_estatistica_mba_ibmec/projeto_final_estatistica_ibmec_v4.html)
+The goal of this project is to apply Descriptive and Inferential Statistics techniques to investigate academic performance in the Control and Automation Engineering program.
+**The analysis examines whether socioeconomic (Race/Color) and geographic (Region) factors are associated with statistically significant differences in students’ ENADE scores.**
 
-## Objective and Analytical Context
+The report brings a full statistical workflow — from data cleaning and transformation to hypothesis testing and visualization.
 
-The main objective of this work is to apply **Descriptive and Inferential Statistics** techniques to analyze the ENADE 2017 microdata, focusing on the **Control and Automation Engineering program.**
-The analysis aims **to identify performance disparities** and answer the following hypothesis:
-**Is there evidence that socioeconomic (Race/Color) and geographic (Region) variables cause statistically significant differences in students’ scores?**
+## Methods & Tools
+**R & RStudio**
 
-## Methodology and Tools
-Tool / Technique	Purpose
-Programming Language / Environment	R (RStudio)
-Variable Transformation	case_when() to label 17 columns (e.g., code 1 for North).
-Data Cleaning	na.omit() to ensure statistical quality of the sample.
-Descriptive Statistics	summarise() with Mode, skewness, kurtosis (distribution shape).
-Main Visualization	Faceted Box Plots (facet_wrap) to compare Scores by Race within each Region.
-Frequency Analysis	Stacked Bar Charts (geom_bar(position="fill")) to visualize satisfaction proportions.
-Final Report	RMarkdown (output using rmdformats::readthedown).
----
+Complete statistical environment used for data handling, analysis, and visualization.
+
+**Data Preparation**
+
+Variable labeling using case_when() (17 variables recoded for readability).
+
+Data cleaning with na.omit() to ensure sample consistency.
+
+**Statistical Techniques**
+
+Descriptive statistics with measures of central tendency, skewness, and kurtosis.
+
+Inferential statistics to test differences across demographic and regional groups.
+
+**Visualizations**
+
+Faceted Box Plots (facet_wrap) comparing scores by Race across Regions.
+
+Stacked Bar Charts (geom_bar(position = "fill")) for satisfaction-level distributions.
+
+**Final Report**
+
+Developed with **RMarkdown**, exported using **rmdformats::readthedown.**
+
+
+## ACCESS THE INTERACTIVE REPORT HERE:
+https://heitorfb10.github.io/enade_projeto_final_estatistica_mba_ibmec/projeto_final_estatistica_ibmec_v4.html
+
+## Files in This Repository
+
+R Markdown HTML report — full statistical analysis
+
+README.md — project documentation
+
+## Contact
+
+For questions, suggestions, or improvements, feel free to open an issue or submit a pull request.
+
+**Heitor Barbosa**
+
+**LinkedIn: https://www.linkedin.com/in/heitor-barbosa-5463518b/**
